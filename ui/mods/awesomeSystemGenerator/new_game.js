@@ -103,9 +103,12 @@ var generateSystem = function(config) {
     specs = _.shuffle(specs);
 
     var cSys = { Planets: []};
+    // Minimum allowable orbital radius
+    var r = (1e5*specs[0]['radius'] + 5e7)/specs[0]['mass'] + specs[0]['radius'] + 500;
+    r = _.max([r, 12500.0]);
     for (var i = 0; i < specs.length; i++) {
-        var theta = getRandomInt(0, 5) / 360 * 2 * Math.PI;
-        var r = 12000 + 5000*i;
+        r += 3000 + specs[i]['radius'];
+        var theta = getRandomInt(0, 360) / 360 * 2 * Math.PI;
         var v = Math.sqrt(5e8 / r);
         console.log(theta + ',' + r + ',' + v)
         var p =  {
@@ -123,6 +126,7 @@ var generateSystem = function(config) {
                 Velocity: [v * Math.sin(theta), -v * Math.cos(theta)],
                 Biomes: specs[i]['biome']};
         cSys['Planets'].push(p);
+        r += specs[i]['radius'];
     }
 
     var planet_template =
