@@ -129,17 +129,19 @@ var generateSystem = function(config) {
 
 
 $(function () {
-    var controls = $('<div style="margin-left: 6px;"></div>');
-    $('.system-controls').append(controls)
+    var controls = $('<div style="margin-left: 6px;"><table id="ap-controls"></table></div>');
+    $('.system-controls').append(controls);
 
+    var table = $('table#ap-controls');
     var addControl = function(id, label, value) {
-        var d = $('<div></div>');
-        d.text(label + ': ');
-        var i = $('<input type="text" style="width: 4em; text-align:right">');
-        d.append(i);
+        var tr = $('<tr></tr>');
+        tr.append($('<td style="padding: 6px">' + label + ':</td>'));
+        var td = $('<td></td>');
+        var i = $('<input type="text" style="width: 3em; text-align:right">');
+        tr.append(i);
         i.attr('id', id);
         i.attr('value', value);
-        controls.append(d);
+        table.append(tr);
     }
     addControl('normal-planets', 'Normal Planets', 3);
     addControl('metal-planets', 'Metal Planets', 0);
