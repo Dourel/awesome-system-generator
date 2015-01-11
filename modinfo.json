@@ -1,0 +1,24 @@
+{
+    "author": "yarmond",
+    "build": "76557",
+    "context": "client",
+    "date": "2015/01/09",
+    "description": "Add System Generation Options to Game Lobby",
+    "display_name": "Awesome System Generator",
+    "enabled": true,
+    "forum": "",
+    "identifier": "com.pa-db.awesomeSystemGenerator",
+    "id": "awesomeSystemGenerator",
+    "priority": 100,
+    "signature": "TBD",
+    "version": "0.1",
+    "category": [
+        "ui",
+        "lobby"
+    ],
+    "scenes": {
+        "new_game": [
+            "coui://ui/mods/awesomeSystemGenerator/new_game.js"
+        ]
+    }
+}
