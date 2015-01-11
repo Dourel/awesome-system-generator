@@ -120,7 +120,7 @@ var generateSystem = function(config) {
                 MetalClusters: [0, 24],
                 BiomeScale: [100, 100],
                 Position: [r * Math.cos(theta), r * Math.sin(theta)],
-                Velocity: [v * Math.sin(theta), v * Math.cos(theta)],
+                Velocity: [v * Math.sin(theta), -v * Math.cos(theta)],
                 Biomes: specs[i]['biome']};
         cSys['Planets'].push(p);
     }
