@@ -26,28 +26,93 @@ var generateSystem = function(config) {
         Players: [2, 10]
     };
 
-    var biomes = [];
-    for (var i = 0; i < $('input#normal-planets').val(); i++) {
-        biomes.push(['earth', 'desert', 'lava', 'tropical']);
+    var nLarge = parseInt($('input#large-planets').val());
+    var nMedium = parseInt($('input#medium-planets').val());
+    var nSmall = parseInt($('input#small-planets').val());
+    var nTiny = parseInt($('input#tiny-planets').val());
+    var nGas = parseInt($('input#gas-giants').val()); // adds an extra 'large'
+    var nMetal = parseInt($('input#metal-planets').val()); // small, medium, or large
+    var nStart = parseInt($('input#start-planets').val()); // small, medium, and large
+    var nLaunch = parseInt($('input#launchable-planets').val()); // small and tiny
+
+    var specs = [];
+
+    // Populate biomes
+    for (var i = 0; i < nMetal; i++) {
+        specs.push({biome: ['metal']});
     }
-    for (var i = 0; i < $('input#gas-giants').val(); i++) {
-        biomes.push(['gas']);
+    for (var i = 0; i < nGas; i++) {
+        specs.push({biome: ['gas'],
+                    radius: getRandomInt(1000,1500),
+                    mass: 50000});
     }
-    for (var i = 0; i < $('input#metal-planets').val(); i++) {
-        biomes.push(['metal']);
+    for (var i = 0; i < nLarge+nMedium+nSmall+nTiny-nMetal; i++) {
+        specs.push({biome: ['earth', 'desert', 'lava', 'tropical']});
     }
-    biomes = _.shuffle(biomes);
+    console.log(specs);
+    specs = _.shuffle(specs);
+
+    // Populate sizes
+    var sizes = [{n:nTiny, m:5000, r1:100, r2:200, bad:'metal'},
+                 {n:nSmall, m:10000, r1:200, r2:300, bad:''},
+                 {n:nMedium, m:20000, r1:300, r2:500, bad:''},
+                 {n:nLarge, m:50000, r1:500, r2:750, bad:''}];
+
+    for (var j = 0; j < sizes.length; j++) {
+        var nLeft = sizes[j]['n'];
+        for (var i = 0; i < specs.length; i++) {
+            if (nLeft == 0) {
+                break;
+            }
+            if (specs[i]['mass'] || specs[i]['biome'][0] == sizes[j]['bad']) {
+                continue;
+            }
+            specs[i]['mass'] = sizes[j]['m'];
+            specs[i]['radius'] = getRandomInt(sizes[j]['r1'], sizes[j]['r2']);
+            nLeft -= 1;
+        }
+    }
+    specs = _.shuffle(specs);
+
+    // Populate start planets (not 'tiny')
+    var nLeft = nStart;
+    for (var i = 0; i < specs.length; i++) {
+        if (nLeft == 0) {
+            break;
+        }
+        if (specs[i]['biome'][0] == 'gas' || specs[i]['mass'] == 5000) {
+            continue;
+        }
+        specs[i]['start'] = true;
+        nLeft -= 1;
+    }
+
+    // Populate launchable planets (smallest radius)
+    specs = _.sortBy(specs, function(s) { return s['mass'] });
+    var nLeft = nLaunch;
+    for (var i = 0; i < specs.length; i++) {
+        if (nLeft == 0) {
+            break;
+        }
+        if (specs[i]['mass'][0] > 10000) {
+            continue;
+        }
+        specs[i]['launch'] = [2, 4];
+        nLeft -= 1;
+    }
+    specs = _.shuffle(specs);
+
     var cSys = { Planets: []};
-    for (var i = 0; i < biomes.length; i++) {
+    for (var i = 0; i < specs.length; i++) {
         var theta = getRandomInt(0, 5) / 360 * 2 * Math.PI;
         var r = 12000 + 5000*i;
         var v = Math.sqrt(5e8 / r);
         console.log(theta + ',' + r + ',' + v)
         var p =  {
-                starting_planet: true,
-                mass: 50000,
-                Thrust: [0, 0],
-                Radius: [150, 250],
+                starting_planet: specs[i]['start'],
+                mass: specs[i]['mass'],
+                Thrust: specs[i]['launch'] || [0, 0],
+                Radius: [specs[i]['radius'], specs[i]['radius']],
                 Height: [20, 25],
                 Water: [33, 35],
                 Temp: [0, 100],
@@ -56,7 +121,7 @@ var generateSystem = function(config) {
                 BiomeScale: [100, 100],
                 Position: [r * Math.cos(theta), r * Math.sin(theta)],
                 Velocity: [v * Math.sin(theta), v * Math.cos(theta)],
-                Biomes: biomes[i]};
+                Biomes: specs[i]['biome']};
         cSys['Planets'].push(p);
     }
 
@@ -143,7 +208,12 @@ $(function () {
         i.attr('value', value);
         table.append(tr);
     }
-    addControl('normal-planets', 'Normal Planets', 3);
-    addControl('metal-planets', 'Metal Planets', 0);
+    addControl('large-planets', 'Large Planets', 0);
+    addControl('medium-planets', 'Medium Planets', 3);
+    addControl('small-planets', 'Small Planets', 0);
+    addControl('tiny-planets', 'Tiny Planets', 0);
     addControl('gas-giants', 'Gas Giants', 0);
+    addControl('metal-planets', 'Metal Planets', 0);
+    addControl('start-planets', 'Start Planets', 1);
+    addControl('launchable-planets', 'Launchable Planets', 0);
 });
