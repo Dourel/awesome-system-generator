@@ -66,16 +66,16 @@ var generateSystem = function(config) {
                  {n:nLarge, m:40000, r1:500, r2:750, bad:''}];
 
     for (var j = 0; j < sizes.length; j++) {
-        var nLeft = sizes[j]['n'];
+        var nLeft = sizes[j].n;
         for (var i = 0; i < specs.length; i++) {
             if (nLeft == 0) {
                 break;
             }
-            if (specs[i]['mass'] || specs[i]['biome'][0] == sizes[j]['bad']) {
+            if (specs[i].mass || specs[i].biome[0] == sizes[j].bad) {
                 continue;
             }
-            specs[i]['mass'] = sizes[j]['m'];
-            specs[i]['radius'] = getRandomInt(sizes[j]['r1'], sizes[j]['r2']);
+            specs[i].mass = sizes[j].m;
+            specs[i].radius = getRandomInt(sizes[j].r1, sizes[j].r2);
             nLeft -= 1;
         }
     }
@@ -87,24 +87,24 @@ var generateSystem = function(config) {
         if (nLeft == 0) {
             break;
         }
-        if (specs[i]['biome'][0] == 'gas' || specs[i]['mass'] == 5000) {
+        if (specs[i].biome[0] == 'gas' || specs[i].mass == 5000) {
             continue;
         }
-        specs[i]['start'] = true;
+        specs[i].start = true;
         nLeft -= 1;
     }
 
     // Populate launchable planets (smallest radius)
-    specs = _.sortBy(specs, function(s) { return s['mass'] });
+    specs = _.sortBy(specs, function(s) { return s.mass });
     var nLeft = nLaunch;
     for (var i = 0; i < specs.length; i++) {
         if (nLeft == 0) {
             break;
         }
-        if (specs[i]['mass'][0] > 10000) {
+        if (specs[i].mass[0] > 10000) {
             continue;
         }
-        specs[i]['launch'] = [2, 4];
+        specs[i].launch = [2, 4];
         nLeft -= 1;
     }
 
@@ -276,20 +276,20 @@ var generateSystem = function(config) {
             theta += 2 * Math.PI / N;
 
             var p =  {
-                starting_planet: child['start'],
-                mass: child['mass'],
-                Thrust: child['launch'] || [0, 0],
-                Radius: [child['radius'], child['radius']],
+                starting_planet: child.start,
+                mass: child.mass,
+                Thrust: child.launch || [0, 0],
+                Radius: [child.radius, child.radius],
                 Height: [20, 25],
                 Water: [33, 35],
                 Temp: [0, 100],
                 MetalDensity: [25, 50],
                 MetalClusters: [0, 24],
                 BiomeScale: [100, 100],
-                Position: child['position'],
-                Velocity: child['velocity'],
-                Biomes: child['biome']};
-            cSys['Planets'].push(p);
+                Position: child.position,
+                Velocity: child.velocity,
+                Biomes: child.biome};
+            cSys.Planets.push(p);
         }
     }
 
