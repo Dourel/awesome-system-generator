@@ -300,10 +300,10 @@ var generateSystem = function(config) {
                     orbits[j].children);
     }
     console.log('---');
-    for (var j = 0; j < specs.length; j++) {
-        console.log('planet', j, specs[j].mass, specs[j].radius,
-            specs[j].position[0], specs[j].position[1],
-            specs[j].velocity[0], specs[j].velocity[1]);
+    for (var j = 0; j < cSys.Planets.length; j++) {
+        console.log('planet', j, cSys.Planets[j].mass, cSys.Planets[j].Radius,
+            cSys.Planets[j].Position[0], cSys.Planets[j].Position[1],
+            cSys.Planets[j].Velocity[0], cSys.Planets[j].Velocity[1]);
     }
 
     var planet_template =
