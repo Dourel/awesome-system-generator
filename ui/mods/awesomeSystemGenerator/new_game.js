@@ -39,31 +39,37 @@ var generateSystem = function(config) {
     var nSmall = parseInt($('input#small-planets').val());
     var nTiny = parseInt($('input#tiny-planets').val());
     var nGas = parseInt($('input#gas-giants').val());
-    var nMetal = parseInt($('input#metal-planets').val()); // small, medium, or large
+    var nLaser = parseInt($('input#laser-planets').val()); // r >= 500; large
     var nStart = parseInt($('input#start-planets').val()); // small, medium, and large
     var nLaunch = parseInt($('input#launchable-planets').val()); // small and tiny
 
     var specs = [];
 
-    // Populate biomes
-    for (var i = 0; i < nMetal; i++) {
-        specs.push({biome: ['metal']});
-    }
+    // Create Gas Giants
     for (var i = 0; i < nGas; i++) {
         specs.push({biome: ['gas'],
                     radius: getRandomInt(1000,1500),
                     mass: 50000});
     }
-    for (var i = 0; i < nLarge+nMedium+nSmall+nTiny-nMetal; i++) {
+
+    // Create Annihilaser planets, taking a slot for a large planet
+    for (var i = 0; i < nLaser; i++) {
+        nLarge = Math.max(nLarge-1, 0);
+        specs.push({biome: ['metal'],
+                    radius: getRandomInt(500, 750),
+                    mass: 40000});
+    }
+
+    for (var i = 0; i < nLarge+nMedium+nSmall+nTiny; i++) {
         specs.push({biome: ['earth', 'desert', 'lava', 'tropical']});
     }
     specs = _.shuffle(specs);
 
-    // Populate sizes
-    var sizes = [{n:nTiny, m:5000, r1:100, r2:200, bad:'metal'},
-                 {n:nSmall, m:10000, r1:200, r2:300, bad:''},
-                 {n:nMedium, m:20000, r1:300, r2:500, bad:''},
-                 {n:nLarge, m:40000, r1:500, r2:750, bad:''}];
+    // Populate sizes and biomes
+    var sizes = [{n:nTiny, m:5000, r1:100, r2:200},
+                 {n:nSmall, m:10000, r1:200, r2:300},
+                 {n:nMedium, m:20000, r1:300, r2:500},
+                 {n:nLarge, m:40000, r1:500, r2:750}];
 
     for (var j = 0; j < sizes.length; j++) {
         var nLeft = sizes[j].n;
@@ -71,7 +77,7 @@ var generateSystem = function(config) {
             if (nLeft == 0) {
                 break;
             }
-            if (specs[i].mass || specs[i].biome[0] == sizes[j].bad) {
+            if (specs[i].mass) {
                 continue;
             }
             specs[i].mass = sizes[j].m;
@@ -394,7 +400,7 @@ $(function () {
     addControl('small-planets', 'Small Planets', 0);
     addControl('tiny-planets', 'Tiny Planets', 2);
     addControl('gas-giants', 'Gas Giants', 1);
-    addControl('metal-planets', 'Metal Planets', 0);
     addControl('start-planets', 'Start Planets', 2);
     addControl('launchable-planets', 'Launchable Planets', 2);
+    addControl('laser-planets', 'Annihilaser Planets', 0);
 });
