@@ -60,32 +60,37 @@ var generateSystem = function(config) {
                     mass: 40000});
     }
 
-    for (var i = 0; i < nLarge+nMedium+nSmall+nTiny; i++) {
-        specs.push({biome: ['earth', 'desert', 'lava', 'tropical']});
-    }
-    specs = _.shuffle(specs);
+    // biome data; probabilities ordered (tiny, small, medium, large)
+    biomes = [
+        {biome:'earth',    probabilities: [ 5, 7,10,10]},
+        {biome:'desert',   probabilities: [ 5, 7,10,10]},
+        {biome:'lava',     probabilities: [10,10, 5, 5]},
+        {biome:'tropical', probabilities: [ 5 ,5,10,10]},
+        {biome:'moon',     probabilities: [10,10,10, 0]},
+        {biome:'metal',    probabilities: [10,10, 5, 0]}
+    ];
 
-    // Populate sizes and biomes
     var sizes = [{n:nTiny, m:5000, r1:100, r2:200},
                  {n:nSmall, m:10000, r1:200, r2:300},
                  {n:nMedium, m:20000, r1:300, r2:500},
                  {n:nLarge, m:40000, r1:500, r2:750}];
 
+    // Populate sizes and biomes for regular planets
     for (var j = 0; j < sizes.length; j++) {
-        var nLeft = sizes[j].n;
-        for (var i = 0; i < specs.length; i++) {
-            if (nLeft == 0) {
-                break;
-            }
-            if (specs[i].mass) {
-                continue;
-            }
-            specs[i].mass = sizes[j].m;
-            specs[i].radius = getRandomInt(sizes[j].r1, sizes[j].r2);
-            nLeft -= 1;
+        var cdf = [];
+        var sum = 0;
+        for (var i = 0; i < biomes.length; i++) {
+            sum += biomes[i].probabilities[j];
+            cdf.push(sum);
+        }
+        for (var i = 0; i < sizes[j].n; i++) {
+            var k = getChoice(cdf);
+            specs.push({biome: [biomes[k].biome],
+                        mass: sizes[j].m,
+                        radius: getRandomInt(sizes[j].r1, sizes[j].r2),
+            })
         }
     }
-    specs = _.shuffle(specs);
 
     // Populate start planets (not 'tiny')
     var nLeft = nStart;
