@@ -182,12 +182,17 @@ var generateSystem = function(config) {
         }
     }
 
-    // Link each orbit to its inner neighbor, if there is one
+    // Link each orbit to its inner neighbor, if there is one, and to the parent
+    // planet
+    _.forEach(specs, function(s) { s.orbits = []; });
     var lastPlanet = undefined;
     var lastOrbit = undefined;
     for (var j = 0; j < orbits.length; j++) {
         if (lastPlanet == orbits[j].planet) {
             orbits[j].inner = lastOrbit;
+        }
+        if (orbits[j].planet != -1) {
+            specs[orbits[j].planet].orbits.push(orbits[j]);
         }
         lastPlanet = orbits[j].planet;
         lastOrbit = orbits[j];
@@ -255,6 +260,25 @@ var generateSystem = function(config) {
         orbit.radius = orbit.inner.radius + 2 * rmax + 1000;
     }
 
+    // Determine the order of the planets, from innermost to outermost (keeping
+    // moons with their parents) so that they will appear in this order in the
+    // in-game planets list
+    var planet_order = [];
+    for (var j = 0; j < orbits.length && orbits[j].planet == -1; j++) {
+        for (var i = 0; i < orbits[j].children.length; i++) {
+            planet_order.push(orbits[j].children[i]);
+            var planet = specs[orbits[j].children[i]];
+            for (var k = 0; k < planet.orbits.length; k++) {
+                Array.prototype.push.apply(planet_order,
+                                           planet.orbits[k].children);
+            }
+        }
+    }
+    var spec_index = [];
+    for (var i = 0; i < planet_order.length; i++) {
+        spec_index[planet_order[i]] = i;
+    }
+
     var cSys = { Planets: []};
 
     //  Assign positions and velocities to all the planets; set up data used for
@@ -300,7 +324,7 @@ var generateSystem = function(config) {
                 Position: child.position,
                 Velocity: child.velocity,
                 Biomes: child.biome};
-            cSys.Planets.push(p);
+            cSys.Planets[spec_index[orbit.children[i]]] = p;
         }
     }
 
