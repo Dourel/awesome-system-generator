@@ -377,13 +377,8 @@ var generateSystem = function(config) {
             api.game.getRandomPlanetName().then(function(name) { nameGet.resolve(name); });
         }
         return $.when(biomeGet, nameGet).then(function(biomeInfo, name) {
-            var radius_range = biomeInfo.radius_range;
-            if (!_.isArray(radius_range))
-                radius_range = [100, 1300];
 
-            bp.generator.radius = getRandomInt(Math.max(plnt.Radius[0], radius_range[0]),
-                    Math.min(plnt.Radius[1], radius_range[1]));
-
+            bp.generator.radius = getRandomInt(plnt.Radius[0], plnt.Radius[1]);
             bp.generator.heightRange = getRandomInt(plnt.Height[0], plnt.Height[1]);
             bp.generator.waterHeight = getRandomInt(plnt.Water[0], plnt.Water[1]);
             bp.generator.temperature = getRandomInt(plnt.Temp[0], plnt.Temp[1]);
