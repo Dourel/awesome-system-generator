@@ -24,7 +24,7 @@ var generateSystem = function(config) {
     // Weighted random choice from an array, where each element in the array is
     // the cumulative probability for the current and all previous elements
     var getChoice = function(arr) {
-        var x = getRandomInt(1, arr[arr.length-1]-1);
+        var x = getRandomInt(1, arr[arr.length-1]);
         return _.findLastIndex(arr, function (k) { return k < x; }) + 1;
     }
 
