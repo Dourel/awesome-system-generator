@@ -52,28 +52,37 @@ var generateSystem = function(config) {
                     mass: 50000});
     }
 
-    // Create Annihilaser planets, taking a slot for a large planet
+    // Create Annihilaser planets, taking a slot for a large or medium planet
     for (var i = 0; i < nLaser; i++) {
-        nLarge = Math.max(nLarge-1, 0);
-        specs.push({biome: ['metal'],
-                    radius: getRandomInt(500, 750),
-                    mass: 40000});
+        var cdf = [nMedium, nMedium+nLarge];
+        var k = getChoice(cdf);
+        if (getChoice(cdf) == 0) {
+            specs.push({biome: ['metal'],
+                        radius: getRandomInt(500, 600),
+                        mass: 20000});
+            nMedium -= 1;
+        } else {
+            specs.push({biome: ['metal'],
+                        radius: getRandomInt(600, 1000),
+                        mass: 40000});
+            nLarge = Math.max(nLarge-1, 0);
+        }
     }
 
     // biome data; probabilities ordered (tiny, small, medium, large)
     biomes = [
-        {biome:'earth',    probabilities: [ 5, 7,10,10]},
+        {biome:'earth',    probabilities: [ 0, 5,10,10]},
         {biome:'desert',   probabilities: [ 5, 7,10,10]},
         {biome:'lava',     probabilities: [10,10, 5, 5]},
         {biome:'tropical', probabilities: [ 5 ,5,10,10]},
-        {biome:'moon',     probabilities: [10,10,10, 0]},
-        {biome:'metal',    probabilities: [10,10, 5, 0]}
+        {biome:'moon',     probabilities: [10,10, 5, 0]},
+        {biome:'metal',    probabilities: [10,10, 0, 0]}
     ];
 
-    var sizes = [{n:nTiny, m:5000, r1:100, r2:200},
-                 {n:nSmall, m:10000, r1:200, r2:300},
-                 {n:nMedium, m:20000, r1:300, r2:500},
-                 {n:nLarge, m:40000, r1:500, r2:750}];
+    var sizes = [{n:nTiny, m:5000, r1:150, r2:240},
+                 {n:nSmall, m:10000, r1:240, r2:380},
+                 {n:nMedium, m:20000, r1:380, r2:600},
+                 {n:nLarge, m:40000, r1:600, r2:1000}];
 
     // Populate sizes and biomes for regular planets
     for (var j = 0; j < sizes.length; j++) {
