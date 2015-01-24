@@ -17,8 +17,14 @@ model.loadRandomSystem = function() {
 var generateSystem = function(config) {
     var rng = new Math.seedrandom(config.seed !== undefined ? config.seed : Math.random());
     //var rng = new Math.seedrandom(6);
-    var getRandomInt = function (min, max) {
-        return Math.floor(rng() * (max - min + 1)) + min;
+    var getRandomInt = function (minmax, max) {
+        if (max == undefined) { // passed list [min,max]
+            return Math.floor(rng() * (minmax[1] - minmax[0] + 1)) + minmax[0];
+        } else { // passed [min,max] as separate arguments
+            var min = minmax;
+            return Math.floor(rng() * (max - min + 1)) + min;
+        }
+
     };
 
     // Weighted random choice from an array, where each element in the array is
@@ -418,18 +424,18 @@ var generateSystem = function(config) {
         }
         return $.when(biomeGet, nameGet).then(function(biomeInfo, name) {
 
-            bp.generator.radius = getRandomInt(plnt.Radius[0], plnt.Radius[1]);
-            bp.generator.heightRange = getRandomInt(plnt.Height[0], plnt.Height[1]);
-            bp.generator.waterHeight = getRandomInt(plnt.Water[0], plnt.Water[1]);
-            bp.generator.temperature = getRandomInt(plnt.Temp[0], plnt.Temp[1]);
-            bp.generator.biomeScale = getRandomInt(plnt.BiomeScale[0], plnt.BiomeScale[1]);
-            bp.generator.metalDensity = getRandomInt(plnt.MetalDensity[0], plnt.MetalDensity[1]);
-            bp.generator.metalClusters = getRandomInt(plnt.MetalClusters[0], plnt.MetalClusters[1]);
+            bp.generator.radius = getRandomInt(plnt.Radius);
+            bp.generator.heightRange = getRandomInt(plnt.Height);
+            bp.generator.waterHeight = getRandomInt(plnt.Water);
+            bp.generator.temperature = getRandomInt(plnt.Temp);
+            bp.generator.biomeScale = getRandomInt(plnt.BiomeScale);
+            bp.generator.metalDensity = getRandomInt(plnt.MetalDensity);
+            bp.generator.metalClusters = getRandomInt(plnt.MetalClusters);
             bp.generator.index = index;
             bp.name = name;
             bp.position = plnt.Position;
             bp.velocity = plnt.Velocity;
-            bp.required_thrust_to_move = getRandomInt(plnt.Thrust[0], plnt.Thrust[1]);
+            bp.required_thrust_to_move = getRandomInt(plnt.Thrust);
             bp.mass = plnt.mass;
             bp.starting_planet = plnt.starting_planet;
 
