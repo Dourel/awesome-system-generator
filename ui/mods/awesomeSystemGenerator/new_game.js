@@ -101,19 +101,6 @@ var generateSystem = function(config) {
         }
     }
 
-    // Populate start planets (not 'tiny')
-    var nLeft = nStart;
-    for (var i = 0; i < specs.length; i++) {
-        if (nLeft == 0) {
-            break;
-        }
-        if (specs[i].biome[0] == 'gas' || specs[i].mass == 5000) {
-            continue;
-        }
-        specs[i].start = true;
-        nLeft -= 1;
-    }
-
     // Populate launchable planets (smallest radius)
     specs = _.sortBy(specs, function(s) { return s.mass });
     var nLeft = nLaunch;
@@ -128,8 +115,52 @@ var generateSystem = function(config) {
         nLeft -= 1;
     }
 
+    var allowGameEnderStart = model.allowGameEnderStart();
+    var nAvailable = nSmall + nMedium + nLarge;
+    if (!allowGameEnderStart) {
+        nAvailable -= nLaunch + nLaser;
+    }
+
+    // Generally don't want tiny start planets, but use them if we have to
+    if (nAvailable < nStart) {
+        nAvailable += nTiny;
+        var allowTinyStart = true;
+    } else {
+        var allowTinyStart = false;
+    }
+
+    // Ignore 'allowGameEnderStart' if there's no other option
+    if (nAvailable < nStart) {
+        model.allowGameEnderStart(true);
+        allowGameEnderStart = true;
+        nAvailable += nLaunch + nLaser;
+    }
+
+    // If we still don't have enough, cut down on the number of start planets
+    if (nAvailable < nStart) {
+        nStart = nAvailable;
+    }
+
+    // Populate start planets
+    specs = _.shuffle(specs);
+    var nLeft = nStart;
+    for (var i = 0; i < specs.length; i++) {
+        if (nLeft == 0) {
+            break;
+        }
+        if ((specs[i].biome[0] == 'gas') ||
+            (!allowTinyStart && specs[i].mass == 5000) ||
+            (!allowGameEnderStart && specs[i].launch) ||
+            (!allowGameEnderStart &&
+             specs[i].biome[0] == 'metal' && specs[i].radius >= 500)) {
+            continue;
+        }
+        specs[i].start = true;
+        nLeft -= 1;
+    }
+
     // Assign planets to orbits, in decreasing order by size
-    specs.reverse();
+    specs = _.sortBy(specs, function(s) { return -s.mass });
     for (var i = 0; i < specs.length; i++) {
         specs[i].id = i;
     }
@@ -418,16 +449,19 @@ $(function () {
     $('.system-controls').append(controls);
 
     var table = $('table#ap-controls');
+
     var addControl = function(id, label, value) {
         var tr = $('<tr></tr>');
         tr.append($('<td style="padding: 6px">' + label + ':</td>'));
         var td = $('<td></td>');
+        tr.append(td);
         var i = $('<input type="text" style="width: 3em; text-align:right">');
-        tr.append(i);
+        td.append(i);
         i.attr('id', id);
         i.attr('value', value);
         table.append(tr);
     }
+
     addControl('large-planets', 'Large Planets', 0);
     addControl('medium-planets', 'Medium Planets', 2);
     addControl('small-planets', 'Small Planets', 0);
@@ -436,4 +470,19 @@ $(function () {
     addControl('start-planets', 'Start Planets', 2);
     addControl('launchable-planets', 'Launchable Planets', 2);
     addControl('laser-planets', 'Annihilaser Planets', 0);
+
+    var addCheckbox = function(name, label, defaultValue) {
+        var L = $('<label data-bind="click: toggle_' + name + '"></label>');
+        L.append($('<input type="checkbox" style="pointer-events: none !important;" data-bind="checked: '+name+', enable: canChangeSettings">'));
+        L.append(' ' + label);
+        controls.append(L);
+
+        model[name] = ko.observable(defaultValue);
+        model['toggle_'+name] = function() {
+            model[name](!model[name]());
+        }
+        ko.applyBindings(model, L[0]);
+    }
+
+    addCheckbox('allowGameEnderStart', 'Allow start planets with game enders', false);
 });
