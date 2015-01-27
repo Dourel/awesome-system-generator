@@ -52,6 +52,7 @@ var generateSystem = function(config) {
     var nLaser = parseInt($('input#laser-planets').val()); // r >= 500; large
     var nStart = parseInt($('input#start-planets').val()); // small, medium, and large
     var nLaunch = parseInt($('input#launchable-planets').val()); // small and tiny
+    var metalSpots = parseInt($('input#metal-spots').val()) * model.slots();
 
     var specs = [];
 
@@ -343,6 +344,10 @@ var generateSystem = function(config) {
     // Adjustments to metal (density,clusters) based biome
     var deltaMetal = {lava:[10,5], metal:[15,10]};
 
+    var metal0 = 0;
+    var metalC = 0;
+    var metalD = 0;
+    var metalRCD = 0;
     for (var i = 0; i < specs.length; i++) {
         var spec = specs[i];
         spec.metalDensity = getRandomInt(metalDensity[spec.size]);
@@ -369,7 +374,38 @@ var generateSystem = function(config) {
         }
         spec.metalDensity = clip(spec.metalDensity, 0, 100);
         spec.metalClusters = clip(spec.metalClusters, 0, 100);
+
+        metal0 += 15.84;
+        metalC += 0.1996*spec.metalClusters;
+        metalD += 0.3633*spec.metalDensity;
+        metalRCD += 1.321e-5*spec.radius*spec.metalClusters*spec.metalDensity;
     }
+
+    // Scale density to get closer to the desired number of metal spots
+    var scaleD = (metalSpots - metal0 - metalC)/(metalD + metalRCD);
+    scaleD = clip(scaleD, 0.2, 3.0);
+
+    // Scale clusters if that wasn't enough
+    var scaleC = (metalSpots - metal0 - metalD*scaleD) / (metalC + metalRCD*scaleD);
+    scaleC = clip(scaleC, 0.2, 3.0);
+
+    var metalEstimate = 0;
+    for (var i = 0; i < specs.length; i++) {
+        var spec = specs[i];
+        if (spec.biome[0] == 'gas') {
+            spec.metalEstimate = 0;
+            continue;
+        }
+        spec.metalDensity = Math.floor(clip(spec.metalDensity*scaleD, 0, 100));
+        spec.metalClusters = Math.floor(clip(spec.metalClusters*scaleC, 0, 100));
+        if (spec.start) {
+            // Still want at least one metal spot per landing zone
+            spec.metalClusters = Math.max(25, spec.metalClusters);
+        }
+        spec.metalEstimate = Math.floor(15.84 + 0.1996*spec.metalClusters +
+                                        0.3633*spec.metalDensity +
+                                        1.321e-5*spec.radius*spec.metalClusters*spec.metalDensity);
+        metalEstimate += spec.metalEstimate;
     }
     var cSys = { Planets: []};
 
@@ -412,6 +448,7 @@ var generateSystem = function(config) {
                 Temp: [0, 100],
                 MetalDensity: child.metalDensity,
                 MetalClusters: child.metalClusters,
+                metalEstimate: child.metalEstimate,
                 BiomeScale: [100, 100],
                 Position: child.position,
                 Velocity: child.velocity,
@@ -429,8 +466,7 @@ var generateSystem = function(config) {
     console.log('---');
     for (var j = 0; j < cSys.Planets.length; j++) {
         console.log('planet', j, cSys.Planets[j].mass, cSys.Planets[j].Radius,
-            cSys.Planets[j].Position[0], cSys.Planets[j].Position[1],
-            cSys.Planets[j].Velocity[0], cSys.Planets[j].Velocity[1]);
+            cSys.Planets[j].MetalDensity, cSys.Planets[j].MetalClusters, cSys.Planets[j].metalEstimate);
     }
 
     var planet_template =
@@ -522,6 +558,7 @@ $(function () {
     addControl('start-planets', 'Start Planets', 2);
     addControl('launchable-planets', 'Launchable Planets', 2);
     addControl('laser-planets', 'Annihilaser Planets', 0);
+    addControl('metal-spots', 'Metal Spots Per Player', 50);
 
     var addCheckbox = function(name, label, defaultValue) {
         var L = $('<label data-bind="click: toggle_' + name + '"></label>');
