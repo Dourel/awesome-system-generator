@@ -14,6 +14,10 @@ model.loadRandomSystem = function() {
         });
 }
 
+var clip = function(value, min, max) {
+    return Math.min(max, Math.max(min, value));
+}
+
 var generateSystem = function(config) {
     var rng = new Math.seedrandom(config.seed !== undefined ? config.seed : Math.random());
     //var rng = new Math.seedrandom(6);
@@ -55,7 +59,8 @@ var generateSystem = function(config) {
     for (var i = 0; i < nGas; i++) {
         specs.push({biome: ['gas'],
                     radius: getRandomInt(1000,1500),
-                    mass: 50000});
+                    mass: 50000,
+                    size: 'gas'});
     }
 
     // Create Annihilaser planets, taking a slot for a large or medium planet
@@ -65,12 +70,16 @@ var generateSystem = function(config) {
         if (getChoice(cdf) == 0) {
             specs.push({biome: ['metal'],
                         radius: getRandomInt(500, 600),
-                        mass: 20000});
+                        mass: 20000,
+                        size: 'medium',
+                        laser: true});
             nMedium -= 1;
         } else {
             specs.push({biome: ['metal'],
                         radius: getRandomInt(600, 1000),
-                        mass: 40000});
+                        mass: 40000,
+                        size: 'large',
+                        laser: true});
             nLarge = Math.max(nLarge-1, 0);
         }
     }
@@ -85,10 +94,10 @@ var generateSystem = function(config) {
         {biome:'metal',    probabilities: [10,10, 0, 0]}
     ];
 
-    var sizes = [{n:nTiny, m:5000, r1:150, r2:240},
-                 {n:nSmall, m:10000, r1:240, r2:380},
-                 {n:nMedium, m:20000, r1:380, r2:600},
-                 {n:nLarge, m:40000, r1:600, r2:1000}];
+    var sizes = [{size:'tiny', n:nTiny, m:5000, r1:150, r2:240},
+                 {size:'small', n:nSmall, m:10000, r1:240, r2:380},
+                 {size:'medium', n:nMedium, m:20000, r1:380, r2:600},
+                 {size:'large', n:nLarge, m:40000, r1:600, r2:1000}];
 
     // Populate sizes and biomes for regular planets
     for (var j = 0; j < sizes.length; j++) {
@@ -103,6 +112,7 @@ var generateSystem = function(config) {
             specs.push({biome: [biomes[k].biome],
                         mass: sizes[j].m,
                         radius: getRandomInt(sizes[j].r1, sizes[j].r2),
+                        size: sizes[j].size
             })
         }
     }
@@ -157,8 +167,7 @@ var generateSystem = function(config) {
         if ((specs[i].biome[0] == 'gas') ||
             (!allowTinyStart && specs[i].mass == 5000) ||
             (!allowGameEnderStart && specs[i].launch) ||
-            (!allowGameEnderStart &&
-             specs[i].biome[0] == 'metal' && specs[i].radius >= 500)) {
+            (!allowGameEnderStart && specs[i].laser)) {
             continue;
         }
         specs[i].start = true;
@@ -325,6 +334,43 @@ var generateSystem = function(config) {
         spec_index[planet_order[i]] = i;
     }
 
+    // Determine parameters for metal spot distributions
+    // Base values are a function of planet size
+    var metalDensity = {tiny: [5,10], small: [15,20], medium: [25,35],
+                        large: [40,45], gas: [0,0]}
+    var metalClusters = {tiny: [8,13], small: [20,25], medium: [25,35],
+                         large: [55,65], gas:[0,0]}
+    // Adjustments to metal (density,clusters) based biome
+    var deltaMetal = {lava:[10,5], metal:[15,10]};
+
+    for (var i = 0; i < specs.length; i++) {
+        var spec = specs[i];
+        spec.metalDensity = getRandomInt(metalDensity[spec.size]);
+        spec.metalClusters = getRandomInt(metalClusters[spec.size]);
+        if (spec.biome[0] == 'gas') {
+            continue;
+        }
+        var delta = deltaMetal[spec.biome];
+        if (delta != undefined) {
+            spec.metalDensity += delta[0];
+            spec.metalClusters += delta[1];
+        }
+        if (spec.launchable) {
+            spec.metalDensity -= 6;
+            spec.metalClusters -= 10;
+        }
+        if (spec.laser) {
+            spec.metalDensity -= 20;
+            spec.metalClusters -= 20;
+        }
+        if (spec.start) {
+            spec.metalDensity = Math.max(spec.metalDensity-10, 2);
+            spec.metalClusters = Math.max(50, spec.metalClusters);
+        }
+        spec.metalDensity = clip(spec.metalDensity, 0, 100);
+        spec.metalClusters = clip(spec.metalClusters, 0, 100);
+    }
+    }
     var cSys = { Planets: []};
 
     //  Assign positions and velocities to all the planets; set up data used for
@@ -364,8 +410,8 @@ var generateSystem = function(config) {
                 Height: [20, 25],
                 Water: [33, 35],
                 Temp: [0, 100],
-                MetalDensity: [25, 50],
-                MetalClusters: [0, 24],
+                MetalDensity: child.metalDensity,
+                MetalClusters: child.metalClusters,
                 BiomeScale: [100, 100],
                 Position: child.position,
                 Velocity: child.velocity,
@@ -429,8 +475,8 @@ var generateSystem = function(config) {
             bp.generator.waterHeight = getRandomInt(plnt.Water);
             bp.generator.temperature = getRandomInt(plnt.Temp);
             bp.generator.biomeScale = getRandomInt(plnt.BiomeScale);
-            bp.generator.metalDensity = getRandomInt(plnt.MetalDensity);
-            bp.generator.metalClusters = getRandomInt(plnt.MetalClusters);
+            bp.generator.metalDensity = plnt.MetalDensity;
+            bp.generator.metalClusters = plnt.MetalClusters;
             bp.generator.index = index;
             bp.name = name;
             bp.position = plnt.Position;
