@@ -57,6 +57,21 @@ var generateSystem = function(config) {
 
     var specs = [];
 
+    // Don't bother generating an interesting system the first time this
+    // function is called (which is before nSlots is set). Quickly generate a
+    // placeholder system instead.
+    if (nSlots == 0) {
+        nLarge = 0;
+        nMedium = 0;
+        nSmall = 0;
+        nTiny = 1;
+        nGas = 0;
+        nLaser = 0;
+        nStart = 1;
+        nLaunch = 0;
+        rSystem.name = 'Placeholder System - Click "new system" after setting parameters';
+    }
+
     // Create Gas Giants
     for (var i = 0; i < nGas; i++) {
         specs.push({biome: ['gas'],
