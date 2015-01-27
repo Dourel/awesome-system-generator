@@ -38,10 +38,11 @@ var generateSystem = function(config) {
         return _.findLastIndex(arr, function (k) { return k < x; }) + 1;
     }
 
+    var nSlots = model.slots();
     var rSystem = {
         name: 'Awesome System ' + getRandomInt(100, 30000),
         isRandomlyGenerated: true,
-        Players: [2, 10]
+        players: [nSlots, nSlots]
     };
 
     var nLarge = parseInt($('input#large-planets').val());
@@ -52,7 +53,7 @@ var generateSystem = function(config) {
     var nLaser = parseInt($('input#laser-planets').val()); // r >= 500; large
     var nStart = parseInt($('input#start-planets').val()); // small, medium, and large
     var nLaunch = parseInt($('input#launchable-planets').val()); // small and tiny
-    var metalSpots = parseInt($('input#metal-spots').val()) * model.slots();
+    var metalSpots = parseInt($('input#metal-spots').val()) * nSlots;
 
     var specs = [];
 
