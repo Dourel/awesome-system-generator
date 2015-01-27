@@ -1,16 +1,9 @@
 model.loadRandomSystem = function() {
-    var self = model;
-    var generatorConfig = {
-        seed: Math.random(),
-        players: 2
-    };
-
-    return generateSystem(generatorConfig).then(function (system) {
+    return generateSystem().then(function (system) {
             UberUtility.unfixupPlanetConfig(system);
-
-            self.loadedSystem(system);
-            self.updateSystem();
-            self.requestUpdateCheatConfig();
+            model.loadedSystem(system);
+            model.updateSystem();
+            model.requestUpdateCheatConfig();
         });
 }
 
@@ -18,8 +11,8 @@ var clip = function(value, min, max) {
     return Math.min(max, Math.max(min, value));
 }
 
-var generateSystem = function(config) {
-    var rng = new Math.seedrandom(config.seed !== undefined ? config.seed : Math.random());
+var generateSystem = function() {
+    var rng = new Math.seedrandom(Math.random());
     //var rng = new Math.seedrandom(6);
     var getRandomInt = function (minmax, max) {
         if (max == undefined) { // passed list [min,max]
@@ -423,7 +416,7 @@ var generateSystem = function(config) {
                                         1.321e-5*spec.radius*spec.metalClusters*spec.metalDensity);
         metalEstimate += spec.metalEstimate;
     }
-    var cSys = { Planets: []};
+    var planets = [];
 
     //  Assign positions and velocities to all the planets; set up data used for
     //  planet generation
@@ -454,22 +447,26 @@ var generateSystem = function(config) {
                               v0[1] + v * Math.cos(theta)];
             theta += 2 * Math.PI / N;
 
-            var p =  {
-                starting_planet: child.start,
+            planets[spec_index[orbit.children[i]]] = {
                 mass: child.mass,
-                Thrust: child.launch || [0, 0],
-                Radius: [child.radius, child.radius],
-                Height: [20, 25],
-                Water: [33, 35],
-                Temp: [0, 100],
-                MetalDensity: child.metalDensity,
-                MetalClusters: child.metalClusters,
+                position: child.position,
+                velocity: child.velocity,
+                starting_planet: child.start,
+                required_thrust_to_move: getRandomInt(child.launch || [0, 0]),
                 metalEstimate: child.metalEstimate,
-                BiomeScale: [100, 100],
-                Position: child.position,
-                Velocity: child.velocity,
-                Biomes: child.biome};
-            cSys.Planets[spec_index[orbit.children[i]]] = p;
+                generator: {
+                    index: spec_index[orbit.children[i]],
+                    seed: getRandomInt(0, 32767),
+                    biome: child.biome[0],
+                    radius: child.radius,
+                    heightRange: getRandomInt(20, 25),
+                    waterHeight: getRandomInt(33, 35),
+                    temperature: getRandomInt(0, 100),
+                    biomeScale: 100,
+                    metalDensity: child.metalDensity,
+                    metalClusters: child.metalClusters,
+                }
+            };
         }
     }
 
@@ -480,64 +477,23 @@ var generateSystem = function(config) {
                     orbits[j].children);
     }
     console.log('---');
-    for (var j = 0; j < cSys.Planets.length; j++) {
-        console.log('planet', j, cSys.Planets[j].mass, cSys.Planets[j].Radius,
-            cSys.Planets[j].MetalDensity, cSys.Planets[j].MetalClusters, cSys.Planets[j].metalEstimate);
+    for (var j = 0; j < planets.length; j++) {
+        var plnt = planets[j];
+        console.log('planet', j, plnt.mass, plnt.generator.radius,
+            plnt.generator.metalDensity, plnt.generator.metalClusters, plnt.metalEstimate);
     }
 
-    var planet_template =
-    {
-        name: "Default Planet",
-        mass: 5000,
-        position: [0, 0],
-        velocity: [0, 0],
-        required_thrust_to_move: 0,
-        generator: {
-            seed: 15,
-            radius: 100,
-            heightRange: 25,
-            waterHeight: 35,
-            temperature: 100,
-            metalDensity: 50,
-            metalClusters: 50,
-            biomeScale: 100,
-            biome: "earth"
-        }
-    };
-
-    // build the planets based on the random numbers in the system template.
-    var pgen = _.map(cSys.Planets, function(plnt, index) {
-        var bp = _.cloneDeep(planet_template);
-        bp.generator.seed = getRandomInt(0, 32767);
-        bp.generator.biome = _.sample(plnt.Biomes);
-
-        var biomeGet = $.get('coui://pa/terrain/' + bp.generator.biome + '.json')
+    // build the planets
+    var pgen = _.map(planets, function(plnt, index) {
+        var biomeGet = $.get('coui://pa/terrain/' + plnt.generator.biome + '.json')
             .then(function(data) {
                 return JSON.parse(data);
             });
-        var nameGet = plnt.name;
-        if (!nameGet) {
-            nameGet = $.Deferred();
-            api.game.getRandomPlanetName().then(function(name) { nameGet.resolve(name); });
-        }
+        var nameGet = $.Deferred();
+        api.game.getRandomPlanetName().then(function(name) { nameGet.resolve(name); });
         return $.when(biomeGet, nameGet).then(function(biomeInfo, name) {
-
-            bp.generator.radius = getRandomInt(plnt.Radius);
-            bp.generator.heightRange = getRandomInt(plnt.Height);
-            bp.generator.waterHeight = getRandomInt(plnt.Water);
-            bp.generator.temperature = getRandomInt(plnt.Temp);
-            bp.generator.biomeScale = getRandomInt(plnt.BiomeScale);
-            bp.generator.metalDensity = plnt.MetalDensity;
-            bp.generator.metalClusters = plnt.MetalClusters;
-            bp.generator.index = index;
-            bp.name = name;
-            bp.position = plnt.Position;
-            bp.velocity = plnt.Velocity;
-            bp.required_thrust_to_move = getRandomInt(plnt.Thrust);
-            bp.mass = plnt.mass;
-            bp.starting_planet = plnt.starting_planet;
-
-            return bp;
+            plnt.name = name;
+            return plnt;
         });
     });
 
