@@ -95,13 +95,19 @@ var generateSystem = function() {
     }
 
     // biome data; probabilities ordered (tiny, small, medium, large)
+    var defaultHeightRange = [20, 50];
+    var defaultWaterHeight = [33,35];
+    var defaultTemp = [5, 95];
+
     biomes = [
-        {biome:'earth',    probabilities: [ 0, 5,10,10]},
-        {biome:'desert',   probabilities: [ 5, 7,10,10]},
-        {biome:'lava',     probabilities: [10,10, 5, 5]},
+        {biome:'earth', probabilities: [ 0, 5,10,10]},
+        {biome:'desert', probabilities: [ 5, 7,10,10]},
+        {biome:'lava', probabilities: [10,10, 5, 5], heightRange: [10,30]},
         {biome:'tropical', probabilities: [ 5 ,5,10,10]},
-        {biome:'moon',     probabilities: [10,10, 5, 0]},
-        {biome:'metal',    probabilities: [10,10, 0, 0]}
+        {biome:'moon', probabilities: [10, 0, 0, 0], heightRange: [25,100]},
+        {biome:'moon', probabilities: [ 0,10, 0, 0], heightRange: [20,50]},
+        {biome:'moon', probabilities: [ 0, 0, 5, 0], heightRange: [10,40]},
+        {biome:'metal', probabilities: [10,10, 0, 0]}
     ];
 
     var sizes = [{size:'tiny', n:nTiny, m:5000, r1:150, r2:240},
@@ -118,11 +124,15 @@ var generateSystem = function() {
             cdf.push(sum);
         }
         for (var i = 0; i < sizes[j].n; i++) {
-            var k = getChoice(cdf);
-            specs.push({biome: [biomes[k].biome],
-                        mass: sizes[j].m,
-                        radius: getRandomInt(sizes[j].r1, sizes[j].r2),
-                        size: sizes[j].size
+            var B = biomes[getChoice(cdf)];
+            specs.push({
+                biome: [B.biome],
+                mass: sizes[j].m,
+                radius: getRandomInt(sizes[j].r1, sizes[j].r2),
+                size: sizes[j].size,
+                temperature: getRandomInt(B.temperature || defaultTemp),
+                heightRange: getRandomInt(B.heightRange || defaultHeightRange),
+                waterHeight: getRandomInt(B.waterHeight || defaultWaterHeight)
             })
         }
     }
@@ -459,9 +469,9 @@ var generateSystem = function() {
                     seed: getRandomInt(0, 32767),
                     biome: child.biome[0],
                     radius: child.radius,
-                    heightRange: getRandomInt(20, 25),
-                    waterHeight: getRandomInt(33, 35),
-                    temperature: getRandomInt(0, 100),
+                    heightRange: child.heightRange,
+                    waterHeight: child.waterHeight,
+                    temperature: child.temperature,
                     biomeScale: 100,
                     metalDensity: child.metalDensity,
                     metalClusters: child.metalClusters,
