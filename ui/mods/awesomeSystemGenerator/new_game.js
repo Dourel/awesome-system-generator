@@ -100,14 +100,21 @@ var generateSystem = function() {
     var defaultTemp = [5, 95];
 
     biomes = [
-        {biome:'earth', probabilities: [ 0, 5,10,10]},
-        {biome:'desert', probabilities: [ 5, 7,10,10]},
-        {biome:'lava', probabilities: [10,10, 5, 5], heightRange: [10,30]},
-        {biome:'tropical', probabilities: [ 5 ,5,10,10]},
-        {biome:'moon', probabilities: [10, 0, 0, 0], heightRange: [25,100]},
-        {biome:'moon', probabilities: [ 0,10, 0, 0], heightRange: [20,50]},
-        {biome:'moon', probabilities: [ 0, 0, 5, 0], heightRange: [10,40]},
-        {biome:'metal', probabilities: [10,10, 0, 0]}
+        {biome:'earth',    probabilities: [ 0, 0,10,10], temperature: [15, 80], waterHeight: [20,50]}, //normal
+        {biome:'earth',    probabilities: [ 0, 0, 3, 3], temperature: [15, 80], waterHeight: [55,60]}, // oceanic
+        {biome:'earth',    probabilities: [ 5, 5, 2, 1], temperature: [0, 0]}, //ice
+        {biome:'earth',    probabilities: [ 5, 5, 2, 1], waterHeight: [0, 20], temperature: [0,0]}, //ice/barren
+        {biome:'desert',   probabilities: [ 0, 4,10,10], waterHeight: [25, 50]}, // normal
+        {biome:'desert',   probabilities: [ 5, 7, 0, 0], waterHeight: [25, 30]}, // small
+        {biome:'desert',   probabilities: [ 0, 0, 3, 3], waterHeight: [55,60]}, //oceanic
+        {biome:'lava',     probabilities: [12,12, 7, 7], heightRange: [10,30]},
+        {biome:'tropical', probabilities: [ 0 ,0,10,10], temperature: [15, 100], waterHeight: [20,50]}, // normal
+        {biome:'tropical', probabilities: [ 5 ,5, 0, 0], temperature: [60, 100]}, // pure jungle
+        {biome:'tropical', probabilities: [ 0 ,0, 3, 3], temperature: [15, 100], waterHeight: [55,60]}, // oceanic
+        {biome:'moon',     probabilities: [10, 0, 0, 0], heightRange: [25,100]}, // tiny
+        {biome:'moon',     probabilities: [ 0,10, 0, 0], heightRange: [20,50]}, // small
+        {biome:'moon',     probabilities: [ 0, 0, 5, 0], heightRange: [10,40]}, // medium
+        {biome:'metal',    probabilities: [10,15, 0, 0]}
     ];
 
     var sizes = [{size:'tiny', n:nTiny, m:5000, r1:150, r2:240},
@@ -489,8 +496,8 @@ var generateSystem = function() {
     console.log('---');
     for (var j = 0; j < planets.length; j++) {
         var plnt = planets[j];
-        console.log('planet', j, plnt.mass, plnt.generator.radius,
-            plnt.generator.metalDensity, plnt.generator.metalClusters, plnt.metalEstimate);
+        console.log('planet', j, planet_order[j], plnt.mass, plnt.generator.radius,
+            plnt.position[0], plnt.position[1], plnt.velocity[0], plnt.velocity[1]);
     }
 
     // build the planets
