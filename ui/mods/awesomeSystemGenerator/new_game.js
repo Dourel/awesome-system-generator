@@ -208,9 +208,10 @@ var generateSystem = function() {
     }
     var orbits = [
         {planet: -1, children: [], weight: 5, capacity: 4, maxMass: 1e5},
-        {planet: -1, children: [], weight: 3, capacity: 5, maxMass: 1e5},
-        {planet: -1, children: [], weight: 2, capacity: 5, maxMass: 1e5},
-        {planet: -1, children: [], weight: 1, capacity: 3, maxMass: 1e5}];
+        {planet: -1, children: [], weight: 3, capacity: 4, maxMass: 1e5},
+        {planet: -1, children: [], weight: 2, capacity: 4, maxMass: 1e5},
+        {planet: -1, children: [], weight: 1, capacity: 4, maxMass: 1e5},
+        {planet: -1, children: [], weight: 0, capacity: 4, maxMass: 1e5}];
 
     for (var i = 0; i < specs.length; i++) {
         var spec = specs[i];
@@ -249,6 +250,36 @@ var generateSystem = function() {
                          capacity: 2, maxMass: 5000});
         }
     }
+
+    // Orbits with 3 planets are not allowed, to avoid the cases where the game
+    // decides to teleport planets to different spots along their orbits. Move
+    // planets from 3-planet orbits to orbits that currently have 0, 1, or 3
+    // planets.
+    for (var j = 0; j < orbits.length; j++) {
+        var orbit = orbits[j];
+        if (orbit.planet != -1) {
+            break;
+        }
+        if (orbit.children.length == 3) {
+            for (var k = j+1; k < orbits.length; k++) {
+                var neworbit = orbits[k];
+                if (neworbit.planet != -1) {
+                    console.log("Orbit reassignment failed!", orbits);
+                    break;
+                }
+                if (neworbit.children.length == 0 ||
+                    neworbit.children.length == 1 ||
+                    neworbit.children.length == 3) {
+                    var spec_id = orbit.children.pop();
+                    console.log("Reassigning", spec_id, "from", j, "to", k);
+                    specs[spec_id].orbit = neworbit;
+                    neworbit.children.push(spec_id);
+                    break;
+                }
+            }
+        }
+    }
+
     // Remove any empty orbits:
     orbits = _.filter(orbits, function(orbit) { return orbit.children.length; });
 
@@ -440,7 +471,7 @@ var generateSystem = function() {
     for (var j = 0; j < orbits.length; j++) {
         var orbit = orbits[j];
         var N = orbit.children.length;
-        var theta = getRandomInt(0, 360) / 360 * 2 * Math.PI;
+        var theta = getRandomInt(0, 3) * Math.PI / 2;
 
         // Orbital parameters of the body that this planet orbits
         if (orbit.planet == -1) {
