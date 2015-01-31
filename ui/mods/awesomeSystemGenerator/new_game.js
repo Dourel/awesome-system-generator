@@ -269,14 +269,18 @@ var generateSystem = function() {
     orbits = _.filter(orbits, function(orbit) { return orbit.children.length; });
 
     // Stupid hack to prevent unintended capture: Set mass for all primary
-    // planets to be equal.
+    // planets to be equal (and large), and set mass of all secondary planets to
+    // be equal (and smaller)
     for (var j = 0; j < orbits.length; j++) {
         var orbit = orbits[j];
-        if (orbit.planet != -1) {
-            break;
-        }
-        for (var i = 0; i < orbit.children.length; i++) {
-            specs[orbit.children[i]].mass = 50000;
+        if (orbit.planet == -1) {
+            for (var i = 0; i < orbit.children.length; i++) {
+                specs[orbit.children[i]].mass = 50000;
+            }
+        } else {
+            for (var i = 0; i < orbit.children.length; i++) {
+                specs[orbit.children[i]].mass = 40000;
+            }
         }
     }
 
