@@ -1,8 +1,8 @@
-model.loadRandomSystem = function() {
+model.generateAwesomeSystem = function() {
     return generateSystem().then(function (system) {
-            UberUtility.unfixupPlanetConfig(system);
-            model.loadedSystem(system);
-            model.updateSystem();
+            model.system(system);
+            model.updateSystem(model.system());
+            model.changeSettings();
             model.requestUpdateCheatConfig();
         });
 }
@@ -49,21 +49,6 @@ var generateSystem = function() {
     var metalSpots = parseInt($('input#metal-spots').val()) * nSlots;
 
     var specs = [];
-
-    // Don't bother generating an interesting system the first time this
-    // function is called (which is before nSlots is set). Quickly generate a
-    // placeholder system instead.
-    if (nSlots == 0) {
-        nLarge = 0;
-        nMedium = 0;
-        nSmall = 0;
-        nTiny = 1;
-        nGas = 0;
-        nLaser = 0;
-        nStart = 1;
-        nLaunch = 0;
-        rSystem.name = 'Placeholder System - Click "new system" after setting parameters';
-    }
 
     // Create Gas Giants
     for (var i = 0; i < nGas; i++) {
@@ -497,22 +482,33 @@ var generateSystem = function() {
 
             planets[spec_index[orbit.children[i]]] = {
                 mass: child.mass,
-                position: child.position,
-                velocity: child.velocity,
+                position_x: child.position[0],
+                position_y: child.position[1],
+                velocity_x: child.velocity[0],
+                velocity_y: child.velocity[1],
                 starting_planet: child.start,
                 required_thrust_to_move: getRandomInt(child.launch || [0, 0]),
                 metalEstimate: child.metalEstimate,
-                generator: {
-                    index: spec_index[orbit.children[i]],
+                planet: {
+                    //index: spec_index[orbit.children[i]],
                     seed: getRandomInt(0, 32767),
                     biome: child.biome[0],
                     radius: child.radius,
                     heightRange: child.heightRange,
                     waterHeight: child.waterHeight,
+                    waterDepth: 50,
                     temperature: child.temperature,
                     biomeScale: 100,
                     metalDensity: child.metalDensity,
                     metalClusters: child.metalClusters,
+                    landingZoneSize: 0,
+                    landingZonesPerArmy: 0,
+                    metalClusters: 25,
+                    metalDensity: 25,
+                    numArmies: 2,
+                    symmetricalMetal: false,
+                    symmetricalStarts: false,
+                    symmetryType: "none"
                 }
             };
         }
@@ -527,13 +523,13 @@ var generateSystem = function() {
     console.log('---');
     for (var j = 0; j < planets.length; j++) {
         var plnt = planets[j];
-        console.log('planet', j, planet_order[j], plnt.mass, plnt.generator.radius,
-            plnt.position[0], plnt.position[1], plnt.velocity[0], plnt.velocity[1]);
+        console.log('planet', j, planet_order[j], plnt.mass, plnt.planet.radius,
+            plnt.position_x, plnt.position_y, plnt.velocity_x, plnt.velocity_y);
     }
 
     // build the planets
     var pgen = _.map(planets, function(plnt, index) {
-        var biomeGet = $.get('coui://pa/terrain/' + plnt.generator.biome + '.json')
+        var biomeGet = $.get('coui://pa/terrain/' + plnt.planet.biome + '.json')
             .then(function(data) {
                 return JSON.parse(data);
             });
@@ -553,9 +549,12 @@ var generateSystem = function() {
 
 
 $(function () {
-    var controls = $('<div style="margin-left: 6px;"><table id="ap-controls"></table></div>');
-    $('.system-controls').append(controls);
-
+    var controls = $('<div><table id="ap-controls"></table></div>');
+    var options = $('.system-options');
+    options.prepend(controls);
+    options.prepend(
+        '<div class="btn_std_gray new_system" data-bind="click: generateAwesomeSystem">' +
+        '<div class="btn_std_label">New Awesome System</div></div>');
     var table = $('table#ap-controls');
 
     var addControl = function(id, label, value) {
@@ -590,8 +589,8 @@ $(function () {
         model['toggle_'+name] = function() {
             model[name](!model[name]());
         }
-        ko.applyBindings(model, L[0]);
     }
 
     addCheckbox('allowGameEnderStart', 'Allow start planets with game enders', false);
+    ko.applyBindings(model, options[0]);
 });
