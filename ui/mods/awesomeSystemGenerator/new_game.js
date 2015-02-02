@@ -556,9 +556,11 @@ $(function () {
     var controls = $('<div><table id="ap-controls"></table></div>');
     var options = $('.system-options');
     options.prepend(controls);
-    options.prepend(
+    var button = $(
         '<div class="btn_std_gray new_system" data-bind="click: generateAwesomeSystem">' +
         '<div class="btn_std_label">New Awesome System</div></div>');
+    ko.applyBindings(model, button[0]);
+    options.prepend(button);
     var table = $('table#ap-controls');
 
     var addControl = function(id, label, value) {
@@ -593,8 +595,8 @@ $(function () {
         model['toggle_'+name] = function() {
             model[name](!model[name]());
         }
+        ko.applyBindings(model, L[0]);
     }
 
     addCheckbox('allowGameEnderStart', 'Allow start planets with game enders', false);
-    ko.applyBindings(model, options[0]);
 });
