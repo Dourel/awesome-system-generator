@@ -1,5 +1,14 @@
-model.generateAwesomeSystem = function() {
-    return generateSystem().then(function (system) {
+// Global variables used for verifying the system configuration after it's been
+// returned from the server
+var ASG = {
+    // Check the system config if verifyCount == 1.
+    // Decrement if verifyCount > 0.
+    verifyCount: 0,
+    failureCount: 0
+};
+
+model.generateAwesomeSystem = function(model, event, seed) {
+    return generateSystem(seed).then(function (system) {
             model.system(system);
             model.updateSystem(model.system());
             model.changeSettings();
@@ -11,8 +20,12 @@ var clip = function(value, min, max) {
     return Math.min(max, Math.max(min, value));
 }
 
-var generateSystem = function() {
-    var rng = new Math.seedrandom(Math.random());
+var generateSystem = function(seed) {
+    if (seed == undefined) {
+        seed = Math.random();
+    }
+    ASG.seed = seed;
+    var rng = new Math.seedrandom(seed);
     //var rng = new Math.seedrandom(6);
     var getRandomInt = function (minmax, max) {
         if (max == undefined) { // passed list [min,max]
@@ -486,6 +499,7 @@ var generateSystem = function() {
 
             planets[spec_index[orbit.children[i]]] = {
                 mass: child.mass,
+                intended_radius: child.radius,
                 position_x: child.position[0],
                 position_y: child.position[1],
                 velocity_x: child.velocity[0],
@@ -531,6 +545,10 @@ var generateSystem = function() {
             plnt.position_x, plnt.position_y, plnt.velocity_x, plnt.velocity_y);
     }
 
+    // First, model.system will be set to what we say here. The next time it is
+    // set will be when the server returns the "validated" system configuration.
+    ASG.verifyCount = 2;
+
     // build the planets
     var pgen = _.map(planets, function(plnt, index) {
         var biomeGet = $.get('coui://pa/terrain/' + plnt.planet.biome + '.json')
@@ -551,6 +569,40 @@ var generateSystem = function() {
     });
 };
 
+function verifySystemConfig(system) {
+    // The server's "validation" will sometimes reset the radii of small metal
+    // planets (r < 500, with no annihilaser) even though they work just fine.
+    // If this happens, try generating the system again (using the same seed).
+    if (!ASG.verifyCount) {
+        return;
+    }
+    ASG.verifyCount -= 1;
+    if (ASG.verifyCount) {
+        return;
+    }
+
+    var needsRegeneration = false;
+    for (var i = 0; i < system.planets.length; i++) {
+        if (system.planets[i].planet.radius != system.planets[i].intended_radius) {
+            console.log('Forcing system regeneration');
+            needsRegeneration = true;
+            break;
+        }
+    }
+    if (!needsRegeneration) {
+        console.log("System config is OK");
+    }
+    if (needsRegeneration && ASG.failureCount < 4) {
+        ASG.failureCount++;
+        model.generateAwesomeSystem(model, undefined, ASG.seed);
+    } else {
+        ASG.failureCount = 0;
+        if (needsRegeneration) {
+            // Give up and regenerate with a new random seed
+            model.generateAwesomeSystem(model);
+        }
+    }
+}
 
 $(function () {
     var controls = $('<div><table id="ap-controls"></table></div>');
@@ -599,4 +651,5 @@ $(function () {
     }
 
     addCheckbox('allowGameEnderStart', 'Allow start planets with game enders', false);
+    model.system.subscribe(verifySystemConfig);
 });
