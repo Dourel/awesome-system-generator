@@ -611,8 +611,8 @@ $(function () {
     var button = $(
         '<div class="btn_std_gray new_system" data-bind="click: generateAwesomeSystem">' +
         '<div class="btn_std_label">New Awesome System</div></div>');
-    ko.applyBindings(model, controls[0]);
     controls.append(button);
+    ko.applyBindings(model, controls[0]);
     var table = $('<table></table>');
     controls.append(table);
 
