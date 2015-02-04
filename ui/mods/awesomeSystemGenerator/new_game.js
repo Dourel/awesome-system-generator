@@ -605,15 +605,16 @@ function verifySystemConfig(system) {
 }
 
 $(function () {
-    var controls = $('<div><table id="ap-controls"></table></div>');
     var options = $('.system-options');
+    var controls = $('<div id="ap-controls" data-bind="visible: canChangeSettings"></div>');
     options.prepend(controls);
     var button = $(
         '<div class="btn_std_gray new_system" data-bind="click: generateAwesomeSystem">' +
         '<div class="btn_std_label">New Awesome System</div></div>');
-    ko.applyBindings(model, button[0]);
-    options.prepend(button);
-    var table = $('table#ap-controls');
+    ko.applyBindings(model, controls[0]);
+    controls.append(button);
+    var table = $('<table></table>');
+    controls.append(table);
 
     var addControl = function(id, label, value) {
         var tr = $('<tr></tr>');
