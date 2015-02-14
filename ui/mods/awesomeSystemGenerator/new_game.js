@@ -183,13 +183,11 @@ var generateSystem = function(seed) {
     }
 
     // Populate start planets
-    specs = _.shuffle(specs);
     var nLeft = nStart;
-    for (var i = 0; i < specs.length; i++) {
-        if (nLeft == 0) {
-            break;
-        }
-        if ((specs[i].biome[0] == 'gas') ||
+    while (nLeft) {
+        var i = getRandomInt(0, specs.length-1);
+        if ((specs[i].start) ||
+            (specs[i].biome[0] == 'gas') ||
             (!allowTinyStart && specs[i].mass == 5000) ||
             (!allowGameEnderStart && specs[i].launch) ||
             (!allowGameEnderStart && specs[i].laser)) {
