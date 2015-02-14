@@ -496,6 +496,7 @@ var generateSystem = function(seed) {
             child.velocity = [v0[0] - v * Math.sin(theta),
                               v0[1] + v * Math.cos(theta)];
             theta += 2 * Math.PI / N;
+            var symmetrical = model.symmetricalStarts() && child.start;
 
             planets[spec_index[orbit.children[i]]] = {
                 mass: child.mass,
@@ -524,9 +525,9 @@ var generateSystem = function(seed) {
                     metalClusters: 25,
                     metalDensity: 25,
                     numArmies: 2,
-                    symmetricalMetal: false,
-                    symmetricalStarts: false,
-                    symmetryType: "none"
+                    symmetricalMetal: symmetrical,
+                    symmetricalStarts: symmetrical,
+                    symmetryType: (symmetrical) ? "terrain and CSG" : "none"
                 }
             };
         }
@@ -652,5 +653,6 @@ $(function () {
     }
 
     addCheckbox('allowGameEnderStart', 'Allow start planets with game enders', false);
+    addCheckbox('symmetricalStarts', 'Symmetrical starting planets ', false);
     model.system.subscribe(verifySystemConfig);
 });
