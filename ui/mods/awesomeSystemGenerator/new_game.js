@@ -520,8 +520,6 @@ var generateSystem = function(seed) {
                     metalClusters: child.metalClusters,
                     landingZoneSize: 0,
                     landingZonesPerArmy: 0,
-                    metalClusters: 25,
-                    metalDensity: 25,
                     numArmies: 2,
                     symmetricalMetal: symmetrical,
                     symmetricalStarts: symmetrical,
