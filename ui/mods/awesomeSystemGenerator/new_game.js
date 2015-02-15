@@ -51,15 +51,15 @@ var generateSystem = function(seed) {
         players: [nSlots, nSlots]
     };
 
-    var nLarge = parseInt($('input#large-planets').val());
-    var nMedium = parseInt($('input#medium-planets').val());
-    var nSmall = parseInt($('input#small-planets').val());
-    var nTiny = parseInt($('input#tiny-planets').val());
-    var nGas = parseInt($('input#gas-giants').val());
-    var nLaser = parseInt($('input#laser-planets').val()); // r >= 500; large
-    var nStart = parseInt($('input#start-planets').val()); // small, medium, and large
-    var nLaunch = parseInt($('input#launchable-planets').val()); // small and tiny
-    var metalSpots = parseInt($('input#metal-spots').val()) * nSlots;
+    var nLarge = parseInt(model.asg_large_planets());
+    var nMedium = parseInt(model.asg_medium_planets());
+    var nSmall = parseInt(model.asg_small_planets());
+    var nTiny = parseInt(model.asg_tiny_planets());
+    var nGas = parseInt(model.asg_gas_giants());
+    var nLaser = parseInt(model.asg_laser_planets()); // r >= 500; large
+    var nStart = parseInt(model.asg_start_planets()); // small, medium, and large
+    var nLaunch = parseInt(model.asg_launchable_planets()); // small and tiny
+    var metalSpots = parseInt(model.asg_metal_spots()) * nSlots;
 
     var specs = [];
 
@@ -602,6 +602,7 @@ function verifySystemConfig(system) {
 }
 
 $(function () {
+    $('head').append('<link rel="stylesheet" href="coui://ui/mods/awesomeSystemGenerator/asg.css" type="text/css" />');
     var options = $('.system-options');
     var controls = $('<div id="ap-controls" data-bind="visible: canChangeSettings"></div>');
     options.prepend(controls);
@@ -613,27 +614,46 @@ $(function () {
     var table = $('<table></table>');
     controls.append(table);
 
-    var addControl = function(id, label, value) {
-        var tr = $('<tr></tr>');
-        tr.append($('<td style="padding: 6px">' + label + ':</td>'));
-        var td = $('<td></td>');
-        tr.append(td);
-        var i = $('<input type="text" style="width: 3em; text-align:right">');
-        td.append(i);
-        i.attr('id', id);
-        i.attr('value', value);
-        table.append(tr);
+    var makeButton = function(label, clickFunction) {
+        var outer = ($('<div class="asg-button"></div>')
+                        .attr('data-bind', 'click: ' + clickFunction));
+        var inner = $('<div class="btn-asg-label"></div>').text(label);
+        outer.append(inner);
+        return outer;
+    }
+    model.adjustVariable = function(observable, delta, min, max) {
+        var v = model[observable];
+        v(clip(v() + delta, min, max));
     }
 
-    addControl('large-planets', 'Large Planets', 0);
-    addControl('medium-planets', 'Medium Planets', 2);
-    addControl('small-planets', 'Small Planets', 0);
-    addControl('tiny-planets', 'Tiny Planets', 2);
-    addControl('gas-giants', 'Gas Giants', 1);
-    addControl('start-planets', 'Start Planets', 2);
-    addControl('launchable-planets', 'Launchable Planets', 2);
-    addControl('laser-planets', 'Annihilaser Planets', 0);
-    addControl('metal-spots', 'Metal Spots Per Player', 50);
+    var addControl = function(id, label, value, delta, min, max) {
+        id = 'asg_' + id;
+        model[id] = ko.observable(value);
+
+        var tr = $('<tr></tr>');
+        tr.append($('<td class="asg asg-label">' + label + ':</td>'));
+        var td = $('<td class="asg"></td>');
+        tr.append(td);
+        var i = $('<input type="text" class="asg-input-value">');
+        i.attr('data-bind', 'value: ' + id);
+        td.append(i);
+        td.append(makeButton('-', 'adjustVariable.bind($data, "'+ id + '",' +
+                                  -delta + ',' + min + ',' + max + ')'));
+        td.append(makeButton('+', 'adjustVariable.bind($data, "'+ id + '",' +
+                                  delta + ',' + min + ',' + max + ')'));
+        table.append(tr);
+        ko.applyBindings(model, tr[0]);
+    }
+
+    addControl('large_planets', 'Large Planets', 0, 1, 0, 16);
+    addControl('medium_planets', 'Medium Planets', 2, 1, 0, 16);
+    addControl('small_planets', 'Small Planets', 0, 1, 0, 16);
+    addControl('tiny_planets', 'Tiny Planets', 2, 1, 0, 16);
+    addControl('gas_giants', 'Gas Giants', 1, 1, 0, 16);
+    addControl('start_planets', 'Start Planets', 2, 1, 1, 16);
+    addControl('launchable_planets', 'Launchable Planets', 2, 1, 0, 16);
+    addControl('laser_planets', 'Annihilaser Planets', 0, 1, 0, 16);
+    addControl('metal_spots', 'Metal Spots Per Player', 50, 10, 10, 500);
 
     var addCheckbox = function(name, label, defaultValue) {
         var L = $('<label data-bind="click: toggle_' + name + '"></label>');
