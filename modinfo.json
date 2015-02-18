@@ -1,8 +1,8 @@
 {
     "author": "yarmond",
-    "build": "77443",
+    "build": "78071",
     "context": "client",
-    "date": "2015/01/31",
+    "date": "2015/02/18",
     "description": "Add System Generation Options to Game Lobby",
     "display_name": "Awesome System Generator",
     "enabled": true,
@@ -11,7 +11,7 @@
     "id": "awesomeSystemGenerator",
     "priority": 100,
     "signature": "TBD",
-    "version": "0.9",
+    "version": "1.0",
     "category": [
         "ui",
         "lobby"
