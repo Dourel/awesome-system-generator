@@ -6,7 +6,7 @@
     "description": "Add System Generation Options to Game Lobby",
     "display_name": "Awesome System Generator",
     "enabled": true,
-    "forum": "",
+    "forum": "https://forums.uberent.com/threads/wip-awesome-system-generator.67747/",
     "identifier": "com.pa-db.awesomeSystemGenerator",
     "id": "awesomeSystemGenerator",
     "priority": 100,
