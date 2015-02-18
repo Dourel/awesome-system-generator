@@ -11,6 +11,13 @@
     line-height: 17px;
 }
 
+.asg-system-id {
+    padding-bottom: 2px;
+    width: 10em;
+    text-align: left;
+    line-height: 17px;
+}
+
 .asg-button {
     padding: 4px 10px;
     margin: 0px 0px 0px 3px;
@@ -31,7 +38,7 @@
 
 .btn-asg-label {
     font-family: 'Sansation bold';
-    font-size: 24px;
+    font-size: 16px;
     color: #fff;
     display: inline;
     line-height: 18px;

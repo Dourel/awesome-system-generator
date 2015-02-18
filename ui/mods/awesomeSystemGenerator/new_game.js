@@ -1,10 +1,15 @@
+function getRandomSeed() {
+    return Math.floor(65536 * Math.random());
+}
+
 // Global variables used for verifying the system configuration after it's been
 // returned from the server
 var ASG = {
     // Check the system config if verifyCount == 1.
     // Decrement if verifyCount > 0.
     verifyCount: 0,
-    failureCount: 0
+    failureCount: 0,
+    seed: getRandomSeed()
 };
 
 model.generateAwesomeSystem = function(model, event, seed) {
@@ -16,15 +21,78 @@ model.generateAwesomeSystem = function(model, event, seed) {
         });
 }
 
+model.generateSystemFromId = function(model, event) {
+    var seed = decodeSystemId();
+    return model.generateAwesomeSystem(model, event, seed);
+}
+
 var clip = function(value, min, max) {
     return Math.min(max, Math.max(min, value));
 }
 
+function encodeSystemId() {
+    var nLarge = parseInt(model.asg_large_planets());
+    var nMedium = parseInt(model.asg_medium_planets());
+    var nSmall = parseInt(model.asg_small_planets());
+    var nTiny = parseInt(model.asg_tiny_planets());
+    var nGas = parseInt(model.asg_gas_giants());
+    var nStart = parseInt(model.asg_start_planets()); // small, medium, and large
+    var nLaunch = parseInt(model.asg_launchable_planets()); // small and tiny
+    var nLaser = parseInt(model.asg_laser_planets()); // r >= 500; large
+    var slots = model.slots() || 2; // ignore spurious zero
+    var metalSpots = parseInt(model.asg_metal_spots()) * slots;
+    var allowGameEnderStart = model.allowGameEnderStart();
+
+    var bools = [allowGameEnderStart, model.symmetricalStarts()]
+    var boolKey = _.reduce(bools,
+            function(r, val, i) { return r + (val ? 1 : 0) * Math.pow(2, i) })
+    var configVars = [nLarge, nMedium, nSmall, nTiny, nGas,
+                      nStart, nLaunch, nLaser, boolKey];
+    var base = _.max(configVars) + 1;
+    var configItems = [ASG.seed, base];
+    configItems.push(_.reduce(configVars,
+            function(r, val, i) { return r + val * Math.pow(base, i) }));
+    configItems.push(metalSpots);
+    var configKey = _.map(configItems,
+                          function(v) { return v.toString(16) }).join('-');
+    console.log(configKey);
+    model.asg_system_id(configKey);
+}
+
+function decodeSystemId() {
+    var config = _.map(model.asg_system_id().split('-'),
+                       function (v) { return parseInt(v, 16); });
+    var seed = config[0];
+    var base = config[1];
+    var combined = config[2];
+    var metalSpots = config[3];
+    var slots = model.slots() || 2; // ignore spurious zero
+    model.asg_metal_spots(Math.floor(metalSpots / slots));
+    var config = _.map(_.range(9),
+            function(i) { return Math.floor(combined/Math.pow(base,i)) % base });
+    model.asg_large_planets(config[0]);
+    model.asg_medium_planets(config[1]);
+    model.asg_small_planets(config[2]);
+    model.asg_tiny_planets(config[3]);
+    model.asg_gas_giants(config[4]);
+    model.asg_start_planets(config[5]);
+    model.asg_launchable_planets(config[6]);
+    model.asg_laser_planets(config[7]);
+    var boolconf = config[8];
+    var bools = _.map(_.range(2),
+            function(i) { return Math.floor(boolconf/Math.pow(2,i)) % 2 });
+    model.allowGameEnderStart(bools[0]);
+    model.symmetricalStarts(bools[1]);
+    return seed;
+}
+
 var generateSystem = function(seed) {
     if (seed == undefined) {
-        seed = Math.random();
+        seed = getRandomSeed();
     }
     ASG.seed = seed;
+    encodeSystemId();
+
     var rng = new Math.seedrandom(seed);
     //var rng = new Math.seedrandom(6);
     var getRandomInt = function (minmax, max) {
@@ -34,7 +102,6 @@ var generateSystem = function(seed) {
             var min = minmax;
             return Math.floor(rng() * (max - min + 1)) + min;
         }
-
     };
 
     // Weighted random choice from an array, where each element in the array is
@@ -45,21 +112,22 @@ var generateSystem = function(seed) {
     }
 
     var nSlots = model.slots();
-    var rSystem = {
-        name: 'Awesome System ' + getRandomInt(100, 30000),
-        isRandomlyGenerated: true,
-        players: [nSlots, nSlots]
-    };
-
     var nLarge = parseInt(model.asg_large_planets());
     var nMedium = parseInt(model.asg_medium_planets());
     var nSmall = parseInt(model.asg_small_planets());
     var nTiny = parseInt(model.asg_tiny_planets());
     var nGas = parseInt(model.asg_gas_giants());
-    var nLaser = parseInt(model.asg_laser_planets()); // r >= 500; large
     var nStart = parseInt(model.asg_start_planets()); // small, medium, and large
     var nLaunch = parseInt(model.asg_launchable_planets()); // small and tiny
+    var nLaser = parseInt(model.asg_laser_planets()); // r >= 500; large
     var metalSpots = parseInt(model.asg_metal_spots()) * nSlots;
+    var allowGameEnderStart = model.allowGameEnderStart();
+
+    var rSystem = {
+        name: 'Awesome System ' + model.asg_system_id(),
+        isRandomlyGenerated: true,
+        players: [nSlots, nSlots]
+    };
 
     var specs = [];
 
@@ -156,7 +224,6 @@ var generateSystem = function(seed) {
         nLeft -= 1;
     }
 
-    var allowGameEnderStart = model.allowGameEnderStart();
     var nAvailable = nSmall + nMedium + nLarge;
     if (!allowGameEnderStart) {
         nAvailable -= nLaunch + nLaser;
@@ -611,6 +678,7 @@ $(function () {
         '<div class="btn_std_label">New Awesome System</div></div>');
     controls.append(button);
     ko.applyBindings(model, controls[0]);
+
     var table = $('<table></table>');
     controls.append(table);
 
@@ -637,12 +705,15 @@ $(function () {
         var i = $('<input type="text" class="asg-input-value">');
         i.attr('data-bind', 'value: ' + id);
         td.append(i);
-        td.append(makeButton('-', 'adjustVariable.bind($data, "'+ id + '",' +
-                                  -delta + ',' + min + ',' + max + ')'));
-        td.append(makeButton('+', 'adjustVariable.bind($data, "'+ id + '",' +
-                                  delta + ',' + min + ',' + max + ')'));
+        if (delta != undefined) {
+            td.append(makeButton('-', 'adjustVariable.bind($data, "'+ id + '",' +
+                                      -delta + ',' + min + ',' + max + ')'));
+            td.append(makeButton('+', 'adjustVariable.bind($data, "'+ id + '",' +
+                                      delta + ',' + min + ',' + max + ')'));
+        }
         table.append(tr);
         ko.applyBindings(model, tr[0]);
+        model[id].subscribe(encodeSystemId);
     }
 
     addControl('large_planets', 'Large Planets', 0, 1, 0, 16);
@@ -655,6 +726,19 @@ $(function () {
     addControl('laser_planets', 'Annihilaser Planets', 0, 1, 0, 16);
     addControl('metal_spots', 'Metal Spots Per Player', 50, 10, 10, 500);
 
+    // "Load System"
+    model.asg_system_id = ko.observable('');
+    var tr = $('<tr></tr>');
+    tr.append($('<td class="asg asg-label">System ID:</td>'));
+    var td = $('<td class="asg"></td>');
+    tr.append(td);
+    var i = $('<input type="text" class="asg-system-id">');
+    i.attr('data-bind', 'value: asg_system_id');
+    td.append(i);
+    table.append(tr);
+    td.append(makeButton('load', 'generateSystemFromId'));
+    ko.applyBindings(model, tr[0]);
+
     var addCheckbox = function(name, label, defaultValue) {
         var L = $('<label data-bind="click: toggle_' + name + '"></label>');
         L.append($('<input type="checkbox" style="pointer-events: none !important;" data-bind="checked: '+name+', enable: canChangeSettings">'));
@@ -664,6 +748,7 @@ $(function () {
         model[name] = ko.observable(defaultValue);
         model['toggle_'+name] = function() {
             model[name](!model[name]());
+            encodeSystemId();
         }
         ko.applyBindings(model, L[0]);
     }
@@ -671,4 +756,5 @@ $(function () {
     addCheckbox('allowGameEnderStart', 'Allow start planets with game enders', false);
     addCheckbox('symmetricalStarts', 'Symmetrical starting planets ', false);
     model.system.subscribe(verifySystemConfig);
+    encodeSystemId();
 });
