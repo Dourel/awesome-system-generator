@@ -586,7 +586,7 @@ var generateSystem = function(seed) {
                     metalDensity: child.metalDensity,
                     metalClusters: child.metalClusters,
                     landingZoneSize: 0,
-                    landingZonesPerArmy: 0,
+                    landingZonesPerArmy: (model.singleLandingZone()) ? 1 : 0,
                     numArmies: 2,
                     symmetricalMetal: symmetrical,
                     symmetricalStarts: symmetrical,
@@ -755,6 +755,7 @@ $(function () {
 
     addCheckbox('allowGameEnderStart', 'Allow start planets with game enders', false);
     addCheckbox('symmetricalStarts', 'Symmetrical starting planets ', false);
+    addCheckbox('singleLandingZone', 'Single landing zone per planet & player', false);
     model.system.subscribe(verifySystemConfig);
     encodeSystemId();
 });
