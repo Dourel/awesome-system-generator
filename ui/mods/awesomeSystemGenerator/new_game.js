@@ -615,9 +615,9 @@ var generateSystem = function(seed) {
 
     // build the planets
     var pgen = _.map(planets, function(plnt, index) {
-        var biomeGet = $.get('coui://pa/terrain/' + plnt.planet.biome + '.json')
+        var biomeGet = $.getJSON('coui://pa/terrain/' + plnt.planet.biome + '.json')
             .then(function(data) {
-                return JSON.parse(data);
+                return data;
             });
         var nameGet = $.Deferred();
         api.game.getRandomPlanetName().then(function(name) { nameGet.resolve(name); });
