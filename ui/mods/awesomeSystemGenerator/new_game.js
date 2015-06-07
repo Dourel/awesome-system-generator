@@ -136,6 +136,7 @@ var generateSystem = function(seed) {
         specs.push({biome: ['gas'],
                     radius: getRandomInt(1000,1500),
                     mass: 50000,
+                    temperature: getRandomInt(0,100),
                     size: 'gas'});
     }
 
