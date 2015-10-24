@@ -116,12 +116,16 @@ var generateSystem = function(seed) {
     var nMedium = parseInt(model.asg_medium_planets());
     var nSmall = parseInt(model.asg_small_planets());
     var nTiny = parseInt(model.asg_tiny_planets());
+	var nCustom = parseInt(model.asg_custom_planets());
+	var radiusCustomMin = parseInt(model.asg_radiusCustomMin());
+    var radiusCustomMax = parseInt(model.asg_radiusCustomMax());
     var nGas = parseInt(model.asg_gas_giants());
     var nStart = parseInt(model.asg_start_planets()); // small, medium, and large
     var nLaunch = parseInt(model.asg_launchable_planets()); // small and tiny
     var nLaser = parseInt(model.asg_laser_planets()); // r >= 500; large
     var metalSpots = parseInt(model.asg_metal_spots()) * nSlots;
     var allowGameEnderStart = model.allowGameEnderStart();
+    var nAsteroid = parseInt(model.asg_asteroid());
 
     var rSystem = {
         name: 'Awesome System ' + model.asg_system_id(),
@@ -130,7 +134,8 @@ var generateSystem = function(seed) {
     };
 
     var specs = [];
-
+    var specs2 = [];
+    
     // Create Gas Giants
     for (var i = 0; i < nGas; i++) {
         specs.push({biome: ['gas'],
@@ -160,6 +165,59 @@ var generateSystem = function(seed) {
             nLarge = Math.max(nLarge-1, 0);
         }
     }
+	
+	
+	//initializing asteroids, randoming params
+	var spawnMaxOneAsteroidOnStart = 0;
+ 
+    for (var i=0; i < nAsteroid; i++) {
+	var ran = getRandomInt(0,1);
+	if(ran==1){
+        specs2.push({biome: "asteroid",
+                    radius: getRandomInt(100,200),
+                    mass: 5000,
+                    respawn: true,
+                    starting_planet: false,
+                    required_thrust_to_move: 1,
+                    start_destroyed: true,
+                    min_spawn_delay: getRandomInt(360,420),
+                    max_spawn_delay: getRandomInt(421,600),
+                    heightRange: 100,
+                    waterHeight: 0,
+                    waterDepth: 100,
+                    temperature: 50,
+                    metalDensity: 1,
+                    metalClusters: 1,
+                    metalSpotLimit: getRandomInt(-1,15),
+                    biomeScale: 100,
+                    numArmies: 2,
+                    landingZonesPerArmy: 0,
+                    landingZoneSize: 0});
+    }
+	else if (ran==0 && spawnMaxOneAsteroidOnStart==0){
+	    specs2.push({biome: "asteroid",
+                    radius: getRandomInt(100,200),
+                    mass: 5000,
+                    respawn: true,
+                    starting_planet: false,
+                    required_thrust_to_move: 1,
+                    start_destroyed: false,
+                    min_spawn_delay: getRandomInt(360,420),
+                    max_spawn_delay: getRandomInt(421,600),
+                    heightRange: 100,
+                    waterHeight: 0,
+                    waterDepth: 100,
+                    temperature: 50,
+                    metalDensity: 1,
+                    metalClusters: 1,
+                    metalSpotLimit: getRandomInt(-1,15),
+                    biomeScale: 100,
+                    numArmies: 2,
+                    landingZonesPerArmy: 0,
+                    landingZoneSize: 0});
+		spawnMaxOneAsteroidOnStart+=1;
+	}
+    }
 
     // biome data; probabilities ordered (tiny, small, medium, large)
     var defaultHeightRange = [20, 50];
@@ -184,10 +242,11 @@ var generateSystem = function(seed) {
         {biome:'metal',    probabilities: [10,15, 0, 0]}
     ];
 
-    var sizes = [{size:'tiny', n:nTiny, m:5000, r1:150, r2:240},
-                 {size:'small', n:nSmall, m:10000, r1:240, r2:380},
-                 {size:'medium', n:nMedium, m:20000, r1:380, r2:600},
-                 {size:'large', n:nLarge, m:40000, r1:600, r2:1000}];
+    var sizes = [{size:'tiny', n:nTiny, m:5000, r1:100, r2:200},
+                 {size:'small', n:nSmall, m:10000, r1:200, r2:350},
+                 {size:'medium', n:nMedium, m:20000, r1:400, r2:800},
+                 {size:'large', n:nLarge, m:40000, r1:800, r2:1200},
+				 {size:'custom', n:nCustom, m:20000, r1:radiusCustomMin, r2:radiusCustomMax}];
 
     // Populate sizes and biomes for regular planets
     for (var j = 0; j < sizes.length; j++) {
@@ -225,7 +284,7 @@ var generateSystem = function(seed) {
         nLeft -= 1;
     }
 
-    var nAvailable = nSmall + nMedium + nLarge;
+    var nAvailable = nSmall + nMedium + nLarge + nCustom;
     if (!allowGameEnderStart) {
         nAvailable -= nLaunch + nLaser;
     }
@@ -595,6 +654,65 @@ var generateSystem = function(seed) {
                 }
             };
         }
+        
+		//code resposible for adding asteroids, hardcoded values because math is hard :/
+        for (var i = 0; i < nAsteroid; i++) {
+            var child = specs2[i];
+            if(i==0) {
+                child.position_x=0;
+                child.position_y=30000;
+                child.velocity_x=-91.28709411621094;
+                child.velocity_y=-0.000003990285676991334;
+            } else if(i==1) {
+                child.position_x=0;
+                child.position_y=-30000;
+                child.velocity_x=91.28709411621094;
+                child.velocity_y=0.000003990285676991334;
+            } else if(i==2) {
+                child.position_x=30000;
+                child.position_y=0;
+                child.velocity_x=-0.000003990285676991334;
+                child.velocity_y=91.28709411621094;
+            }
+
+            planets[spec_index.length+i] = {
+                mass: child.mass,
+                intended_radius: child.radius,
+                position_x: child.position_x,
+                position_y: child.position_y,
+                velocity_x: child.velocity_x,
+                velocity_y: child.velocity_y,
+                starting_planet: child.start,
+                start_destroyed: child.start_destroyed,
+				respawn: child.respawn,
+                required_thrust_to_move: child.required_thrust_to_move,
+                min_spawn_delay: child.min_spawn_delay,
+                max_spawn_delay: child.max_spawn_delay,                
+                planet: {
+                    //index: spec_index[orbit.children[i]],
+                    seed: getRandomInt(0, 32767),
+                    biome: child.biome,
+                    radius: child.radius,
+                    heightRange: child.heightRange,
+                    waterHeight: child.waterHeight,
+                    waterDepth: 50,
+                    temperature: child.temperature,
+                    biomeScale: 100,
+                    metalDensity: child.metalDensity,
+                    metalClusters: child.metalClusters,
+                    metalSpotLimit: child.metalSpotLimit,
+                    landingZoneSize: 0,
+                    landingZonesPerArmy: 0,
+                    numArmies: 2,
+                    symmetricalMetal: false,
+                    symmetricalStarts: false,
+                    symmetryType: "none"
+                }
+            };
+        }
+        
+        
+        
     }
 
     // Debug printing
@@ -718,14 +836,18 @@ $(function () {
     }
 
     addControl('large_planets', 'Large Planets', 0, 1, 0, 16);
-    addControl('medium_planets', 'Medium Planets', 2, 1, 0, 16);
+    addControl('medium_planets', 'Medium Planets', 0, 1, 0, 16);
     addControl('small_planets', 'Small Planets', 0, 1, 0, 16);
-    addControl('tiny_planets', 'Tiny Planets', 2, 1, 0, 16);
-    addControl('gas_giants', 'Gas Giants', 1, 1, 0, 16);
-    addControl('start_planets', 'Start Planets', 2, 1, 1, 16);
-    addControl('launchable_planets', 'Launchable Planets', 2, 1, 0, 16);
+    addControl('tiny_planets', 'Tiny Planets', 0, 1, 0, 16);
+	addControl('custom_planets', 'Custom Planets', 0, 1, 0, 16);
+	addControl('radiusCustomMin', 'Min Radius', 50, 50, 50, 1200);
+    addControl('radiusCustomMax', 'Max Radius', 150, 50, 50, 1200);
+    addControl('gas_giants', 'Gas Giants', 0, 1, 0, 16);
+    addControl('start_planets', 'Start Planets', 0, 1, 1, 16);
+    addControl('launchable_planets', 'Launchable Planets', 0, 1, 0, 16);
     addControl('laser_planets', 'Annihilaser Planets', 0, 1, 0, 16);
-    addControl('metal_spots', 'Metal Spots Per Player', 50, 10, 10, 500);
+    addControl('metal_spots', 'Metal Spots Per Player', 10, 10, 10, 500);
+    addControl('asteroid', 'Asteroid Count', 0, 1, 0, 3);
 
     // "Load System"
     model.asg_system_id = ko.observable('');
